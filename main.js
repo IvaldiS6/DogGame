@@ -7,14 +7,14 @@ import { UI } from './UI.js';
 window.addEventListener('load', function(){
     const canvas = this.document.getElementById('canvas1');
     const ctx = canvas.getContext('2d');
-    canvas.width = 500;
+    canvas.width = 900;
     canvas.height = 500;
 
     class Game {
         constructor(width, height){
             this.width = width;
             this.height = height;
-            this.groundMargin = 80;
+            this.groundMargin = 50;
             this.speed = 0;
             this.maxSpeed = 3;
             this.background = new Background(this);
@@ -24,6 +24,7 @@ window.addEventListener('load', function(){
             this.enemies =[];
             this.particles = [];
             this.collisions = [];
+            this.floatingMessages = [];
             this.maxParticles = 50;
             this.enemyTimer = 0;
             this.enemyInterval = 1000;
@@ -31,8 +32,10 @@ window.addEventListener('load', function(){
             this.score = 0;
             this.fontColor = 'black';
             this.time = 0;
-            this.maxTime = 10000;
+            this.maxTime = 30000;
+            this.winningScore = 40;
             this.gameOver = false;
+            this.lives = 5;
             this.player.currentState = this.player.states[0];
             this.player.currentState.enter();
         }
@@ -50,7 +53,10 @@ window.addEventListener('load', function(){
             }
             this.enemies.forEach(enemy => {
                 enemy.update(deltaTime);
-                if (enemy.markedForDeletion) this.enemies.splice(this.enemies.indexOf(enemy), 1);
+            });
+            // handle messages
+            this.floatingMessages.forEach(message => {
+                message.update();
             });
             // handle particles
             this.particles.forEach((particle, index) => {
@@ -58,12 +64,17 @@ window.addEventListener('load', function(){
                 if (particle.markedForDeletion) this.particles.splice(index, 1);
             });
             if (this.particles.length > this.maxParticles) {
-                this.particles = this.particles.slice(0 , this.maxParticles);
+                this.particles.length = this.maxParticles;
             }
+            // handle collision sprites
             this.collisions.forEach((collision, index) => {
                 collision.update(deltaTime);
                 if (collision.markedForDeletion) this.collisions.splice(index, 1);
             });
+            this.particles = this.particles.filter(particle => !particle.markedForDeletion);
+            this.collisions = this.collisions.filter(collision => !collision.markedForDeletion);
+            this.enemies = this.enemies.filter(enemy => !enemy.markedForDeletion);
+            this.floatingMessages = this.floatingMessages.filter(message => !message.markedForDeletion);
         }
         draw(context){
             this.background.draw(context);
@@ -76,6 +87,9 @@ window.addEventListener('load', function(){
             });
             this.collisions.forEach(collision => {
                 collision.draw(context);
+            });
+            this.floatingMessages.forEach(message => {
+                message.draw(context);
             });
             this.UI.draw(context);
         }
